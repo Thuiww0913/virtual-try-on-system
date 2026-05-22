@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /*
+      跨平台一致的字体栈
+      - 拉丁字符：Inter / DM Sans
+      - 中文：依次回退 macOS / Windows / Linux 常见无衬线中文字体
+    */
+    font-family:
+      'Inter', 'DM Sans',
+      -apple-system, BlinkMacSystemFont,
+      'Segoe UI', Roboto,
+      'PingFang SC', 'Hiragino Sans GB',
+      'Microsoft YaHei', 'Noto Sans CJK SC', 'Source Han Sans SC',
+      'WenQuanYi Micro Hei',
+      system-ui, sans-serif;
+    background-color: #07080b;
+    color: #e6e8ef;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    /* 防止跨平台行高/字距细微偏差 */
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    letter-spacing: 0;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 0%,   rgba(200,255,61,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(61,214,255,0.05) 0%, transparent 60%),
+      #07080b;
+    min-height: 100vh;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  ::selection {
+    background-color: rgba(200, 255, 61, 0.25);
+    color: #fff;
+  }
+}
+
+@layer utilities {
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+
+  /* 隐藏滚动条但保留滚动功能 */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* 淡化网格背景 */
+  .bg-grid {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px);
+    background-size: 56px 56px;
+    background-position: center center;
+    mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 80%);
+  }
+
+  /* 按钮玻璃高光 */
+  .glass {
+    background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%);
+    backdrop-filter: blur(12px);
+  }
+
+  /* 进度条发光条纹 */
+  .progress-gradient {
+    background: linear-gradient(
+      90deg,
+      #c8ff3d 0%,
+      #8ee84a 35%,
+      #3dd6ff 75%,
+      #5de8ff 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 2.2s linear infinite;
+  }
+
+  /* scrollbar for modal */
+  .thin-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+  .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .thin-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.1);
+    border-radius: 3px;
+  }
+}
