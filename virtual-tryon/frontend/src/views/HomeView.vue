@@ -220,8 +220,7 @@
       </div>
 
       <footer class="mt-16 pb-10 text-center text-[11px] text-ink-500">
-        Powered by <span class="text-ink-300">OOTDiffusion</span> ·
-        © {{ new Date().getFullYear() }} Virtual Try-On
+        西安工程大学 · 计算机科学学院 · Virtual Try-On System
       </footer>
     </main>
 
