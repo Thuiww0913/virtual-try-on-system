@@ -212,7 +212,67 @@
       </div>
     </section>
 
-    <!-- ── 底部 Dock ─────────────────────────────────────── -->
+    <!-- ── 模特相册条(紧凑单行,仅在有模特时显示) ──────────── -->
+    <section
+      v-if="!modelsLoading && allModels.length"
+      class="relative z-10 shrink-0 px-10 xl:px-16 3xl:px-24 pt-3 xl:pt-4 3xl:pt-6 pb-1"
+    >
+      <div class="flex items-center justify-between mb-2 3xl:mb-3">
+        <div class="flex items-center gap-2 3xl:gap-3">
+          <span class="w-1 h-4 3xl:w-1.5 3xl:h-7 rounded-full bg-accent" />
+          <h3 class="text-sm xl:text-base 3xl:text-2xl font-display font-semibold text-white/90 tracking-wide">
+            模特相册
+          </h3>
+          <span class="text-[11px] xl:text-xs 3xl:text-lg text-ink-500">
+            {{ allModels.length }} 位 · 不想拍照?直接选一位
+          </span>
+        </div>
+      </div>
+
+      <div class="relative rounded-2xl 3xl:rounded-3xl border border-ink-700/60 bg-ink-800/30 backdrop-blur-sm">
+        <div
+          ref="modelDockEl"
+          @scroll="onModelDockScroll"
+          class="kiosk-model-dock-scroller overflow-x-auto scroll-smooth no-scrollbar"
+        >
+          <div
+            class="flex items-center gap-3 xl:gap-4 3xl:gap-7 px-5 3xl:px-9"
+            :class="{ 'justify-center w-full': allModels.length <= 8 }"
+          >
+            <button
+              v-for="m in allModels"
+              :key="m.id"
+              type="button"
+              @click="onModelPresetSelect(m.id)"
+              class="kiosk-dock-card relative flex-shrink-0 rounded-xl 3xl:rounded-2xl overflow-hidden border-2 bg-ink-800 transition-all duration-200 active:scale-95"
+              :class="selectedModelId === m.id
+                ? 'border-accent shadow-accent-glow scale-[1.05]'
+                : 'border-ink-600/70 hover:border-ink-500'"
+              :title="m.name"
+            >
+              <div class="relative w-[78px] h-[104px] xl:w-[92px] xl:h-[122px] 3xl:w-[150px] 3xl:h-[200px]">
+                <img
+                  :src="m.url"
+                  :alt="m.name"
+                  loading="lazy"
+                  class="w-full h-full object-cover"
+                />
+                <div
+                  v-if="selectedModelId === m.id"
+                  class="absolute top-1.5 right-1.5 3xl:top-2.5 3xl:right-2.5 w-5 h-5 3xl:w-8 3xl:h-8 rounded-full bg-accent flex items-center justify-center shadow-accent-glow"
+                >
+                  <svg class="w-3 h-3 3xl:w-5 3xl:h-5 text-ink-900" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5">
+                    <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── 底部 Dock(衣服) ──────────────────────────────────── -->
     <section
       ref="dockSectionEl"
       class="relative z-10 shrink-0 px-10 xl:px-16 3xl:px-24 pb-6 xl:pb-8 3xl:pb-12 pt-4 xl:pt-5 3xl:pt-8 kiosk-dock-section"
@@ -365,6 +425,7 @@ import ProgressBar   from '../components/ProgressBar.vue'
 import ResultModal   from '../components/ResultModal.vue'
 import CameraCapture from '../components/CameraCapture.vue'
 import { listClothes, CATEGORIES, DEFAULT_CATEGORY } from '../api/clothes.js'
+import { listModels } from '../api/models.js'
 
 const router = useRouter()
 
@@ -406,6 +467,11 @@ const allClothes      = ref([])
 const clothesLoading  = ref(true)
 const currentCategory = ref('all')
 
+/* 模特相册状态 */
+const allModels        = ref([])
+const modelsLoading    = ref(true)
+const selectedModelId  = ref(null)
+
 const filteredClothes = computed(() => {
   if (currentCategory.value === 'all') return allClothes.value
   return allClothes.value.filter(c => c.category === currentCategory.value)
@@ -442,6 +508,19 @@ async function loadClothes() {
   }
 }
 
+/* ── 加载模特相册 ──────────────────────────────────────── */
+async function loadModels() {
+  modelsLoading.value = true
+  try {
+    allModels.value = await listModels()
+  } catch (e) {
+    console.error('加载模特失败', e)
+    allModels.value = []
+  } finally {
+    modelsLoading.value = false
+  }
+}
+
 function setCategory(c) {
   currentCategory.value = c
   nextTick(refreshDockScrollState)
@@ -469,11 +548,34 @@ function onPersonUpload(file) {
   revokePreview(personPreview.value)
   personFile.value = file
   personPreview.value = file ? URL.createObjectURL(file) : null
+  selectedModelId.value = null
   resetResult()
 }
 
 function onCameraCaptured(file) {
   onPersonUpload(file)
+}
+
+async function onModelPresetSelect(id) {
+  const preset = allModels.value.find(p => p.id === id)
+  if (!preset) return
+  selectedModelId.value = id
+  error.value = null
+
+  revokePreview(personPreview.value)
+  personPreview.value = preset.url
+  personFile.value = null
+
+  try {
+    const file = await urlToFile(preset.url, `${preset.id}.jpg`)
+    personFile.value = file
+  } catch (e) {
+    console.error(e)
+    error.value = '加载预设模特失败：' + (e.message || '网络错误')
+    selectedModelId.value = null
+    personPreview.value = null
+  }
+  resetResult()
 }
 
 function onClothUpload(file) {
@@ -591,6 +693,7 @@ function resetAll() {
   clothFile.value = null
   clothPreview.value = null
   selectedPresetId.value = null
+  selectedModelId.value = null
   categoryLockedByPreset.value = false
   clothCategory.value = DEFAULT_CATEGORY
   resultUrl.value = null
@@ -602,6 +705,7 @@ function resetAll() {
 /* ── Dock 滚动 ─────────────────────────────────────────── */
 const dockEl         = ref(null)
 const dockSectionEl  = ref(null)
+const modelDockEl    = ref(null)
 const canScrollLeft  = ref(false)
 const canScrollRight = ref(false)
 const dockPulsing    = ref(false)   // 提示性脉冲高亮
@@ -610,6 +714,9 @@ const hasSwiped      = ref(false)   // 用户是否已滑过 Dock；首次滑动
 const dockScrollStep = computed(() => window.innerWidth >= 2400 ? 880 : 480)
 // 首次滑动提示：当 Dock 可向右滚动 且 用户还没滑过时显示
 const showSwipeHint  = computed(() => canScrollRight.value && !hasSwiped.value)
+
+/* 模特 Dock 的滚动事件占位(目前仅用于触控滑动,无导航按钮) */
+function onModelDockScroll() { /* placeholder for future scroll-state */ }
 
 function refreshDockScrollState() {
   const el = dockEl.value
@@ -667,7 +774,7 @@ onMounted(async () => {
   window.addEventListener('resize', refreshDockScrollState)
   document.addEventListener('fullscreenchange', onFullscreenChange)
 
-  await loadClothes()
+  await Promise.all([loadClothes(), loadModels()])
   await enterFullscreenIfNeeded()
 })
 
@@ -748,6 +855,19 @@ onBeforeUnmount(() => {
   /* 滚动吸附：滑动后自动对齐到最近的衣服卡片，触感像翻硬卡片 */
   scroll-snap-type: x proximity;
   scroll-padding-left: 32px;
+}
+
+/* 模特 Dock:更紧凑,不需要 snap 吸附 */
+.kiosk-model-dock-scroller {
+  padding: 8px 0;
+  -webkit-mask-image: linear-gradient(
+    90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%
+  );
+          mask-image: linear-gradient(
+    90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%
+  );
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .kiosk-dock-card {

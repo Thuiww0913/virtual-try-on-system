@@ -181,8 +181,22 @@
         </transition>
       </div>
 
+      <!-- ── 模特相册 Dock ─────────────────────────────────── -->
+      <div v-if="!modelsLoading && allModels.length" class="mt-14 animate-fade-up animate-delay-300">
+        <ClothingDock
+          :items="allModels"
+          v-model="selectedModelId"
+          title="模特相册"
+          count-suffix="位 · 点击使用"
+          @update:modelValue="onModelPresetSelect"
+        />
+      </div>
+
       <!-- 分类标签 -->
-      <div class="mt-14 mb-3 flex items-center justify-center flex-wrap gap-2 animate-fade-up animate-delay-300">
+      <div
+        class="mb-3 flex items-center justify-center flex-wrap gap-2 animate-fade-up animate-delay-300"
+        :class="(!modelsLoading && allModels.length) ? 'mt-10' : 'mt-14'"
+      >
         <button
           v-for="c in CATEGORIES"
           :key="c.value"
@@ -244,6 +258,7 @@ import ClothingDock   from '../components/ClothingDock.vue'
 import ResultModal    from '../components/ResultModal.vue'
 import CameraCapture  from '../components/CameraCapture.vue'
 import { listClothes, CATEGORIES, DEFAULT_CATEGORY } from '../api/clothes.js'
+import { listModels } from '../api/models.js'
 
 const router = useRouter()
 
@@ -285,6 +300,11 @@ const allClothes      = ref([])
 const clothesLoading  = ref(true)
 const currentCategory = ref('all')
 
+/* 模特相册状态 */
+const allModels         = ref([])
+const modelsLoading     = ref(true)
+const selectedModelId   = ref(null)
+
 const filteredClothes = computed(() => {
   if (currentCategory.value === 'all') return allClothes.value
   return allClothes.value.filter(c => c.category === currentCategory.value)
@@ -314,6 +334,19 @@ async function loadClothes() {
   }
 }
 
+/* ── 拉取模特相册 ──────────────────────────────────────── */
+async function loadModels() {
+  modelsLoading.value = true
+  try {
+    allModels.value = await listModels()
+  } catch (e) {
+    console.error('加载模特失败', e)
+    allModels.value = []
+  } finally {
+    modelsLoading.value = false
+  }
+}
+
 function setCategory(c) {
   currentCategory.value = c
 }
@@ -340,11 +373,34 @@ function onPersonUpload(file) {
   revokePreview(personPreview.value)
   personFile.value = file
   personPreview.value = file ? URL.createObjectURL(file) : null
+  selectedModelId.value = null
   resetResult()
 }
 
 function onCameraCaptured(file) {
   onPersonUpload(file)
+}
+
+async function onModelPresetSelect(id) {
+  const preset = allModels.value.find(p => p.id === id)
+  if (!preset) return
+  selectedModelId.value = id
+  error.value = null
+
+  revokePreview(personPreview.value)
+  personPreview.value = preset.url
+  personFile.value = null
+
+  try {
+    const file = await urlToFile(preset.url, `${preset.id}.jpg`)
+    personFile.value = file
+  } catch (e) {
+    console.error(e)
+    error.value = '加载预设模特失败：' + (e.message || '网络错误')
+    selectedModelId.value = null
+    personPreview.value = null
+  }
+  resetResult()
 }
 
 function onClothUpload(file) {
@@ -456,7 +512,10 @@ async function handleTryOn() {
 }
 
 /* ── 生命周期 ──────────────────────────────────────────── */
-onMounted(loadClothes)
+onMounted(() => {
+  loadClothes()
+  loadModels()
+})
 onBeforeUnmount(() => clearInterval(progressTimer))
 </script>
 

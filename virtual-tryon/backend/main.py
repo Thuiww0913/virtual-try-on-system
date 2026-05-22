@@ -81,8 +81,10 @@ def pick_remote_url(category: str) -> str:
 BASE_DIR    = Path(__file__).parent
 STATIC_DIR  = BASE_DIR / "static"
 CLOTHES_DIR = STATIC_DIR / "clothes"
+MODELS_DIR  = STATIC_DIR / "models"
 STATIC_DIR.mkdir(exist_ok=True)
 CLOTHES_DIR.mkdir(exist_ok=True)
+MODELS_DIR.mkdir(exist_ok=True)
 
 # ── FastAPI 应用 ────────────────────────────────────────────────────────────
 app = FastAPI(title="Virtual Try-On Backend", version="2.0.0")
@@ -105,6 +107,12 @@ app.include_router(admin_router)
 def public_list_clothes(category: Optional[str] = Query(None, description="可选分类过滤")):
     """对外公开的衣服列表（前台 Dock 调用）。"""
     return {"code": 0, "data": storage.list_clothes(category=category)}
+
+
+@app.get("/api/models")
+def public_list_models():
+    """对外公开的模特相册列表(前台 Dock 调用)。"""
+    return {"code": 0, "data": storage.list_models()}
 
 
 # ── 工具函数 ───────────────────────────────────────────────────────────────

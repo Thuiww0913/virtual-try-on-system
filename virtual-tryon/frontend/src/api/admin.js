@@ -53,3 +53,34 @@ export async function deleteCloth(id) {
   const { data } = await client.delete(`/api/admin/clothes/${id}`)
   return data?.data
 }
+
+/* ── 模特相册管理 API ────────────────────────────────────────── */
+export async function adminListModels() {
+  const { data } = await client.get('/api/admin/models')
+  return data?.data || []
+}
+
+export async function uploadModels(files, { name = '' } = {}) {
+  const fd = new FormData()
+  for (const f of files) fd.append('files', f)
+  if (name) fd.append('name', name)
+  const { data } = await client.post('/api/admin/models', fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  return data?.data || []
+}
+
+export async function patchModel(id, fields) {
+  const { data } = await client.patch(`/api/admin/models/${id}`, fields)
+  return data?.data
+}
+
+export async function reorderModels(ids) {
+  const { data } = await client.put('/api/admin/models/order', { ids })
+  return data
+}
+
+export async function deleteModel(id) {
+  const { data } = await client.delete(`/api/admin/models/${id}`)
+  return data?.data
+}

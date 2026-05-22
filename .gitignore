@@ -126,6 +126,10 @@ virtual-tryon/backend/db.json.tmp
 # 目录会由 backend 启动时自动创建 (main.py 中 CLOTHES_DIR.mkdir)
 virtual-tryon/backend/static/clothes/
 
+# 模特相册(运行时通过 admin 上传,各部署独立)
+# 目录会由 backend 启动时自动创建 (main.py 中 MODELS_DIR.mkdir)
+virtual-tryon/backend/static/models/
+
 # AI 推理产物
 virtual-tryon/backend/static/result_*.jpg
 virtual-tryon/backend/static/result_*.png

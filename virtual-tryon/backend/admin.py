@@ -34,7 +34,9 @@ ADMIN_TOKEN_TTL = int(os.getenv("ADMIN_TOKEN_TTL", "604800"))   # 7 days
 
 BASE_DIR    = Path(__file__).parent
 CLOTHES_DIR = BASE_DIR / "static" / "clothes"
+MODELS_DIR  = BASE_DIR / "static" / "models"
 CLOTHES_DIR.mkdir(parents=True, exist_ok=True)
+MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 # 内存 token 存储：{ token: created_ts }
 # 进程重启后所有人需要重新登录，对小型管理后台够用
@@ -201,6 +203,96 @@ def delete_one(cloth_id: str, _: str = Depends(require_admin)):
     # 同步删除文件
     try:
         (CLOTHES_DIR / item["filename"]).unlink(missing_ok=True)
+    except Exception as e:
+        logger.warning(f"Failed to remove file {item['filename']}: {e}")
+    return {"code": 0, "data": item}
+
+
+# ── 模特相册管理路由 ─────────────────────────────────────────────────────
+@router.get("/models")
+def list_models(_: str = Depends(require_admin)):
+    return {"code": 0, "data": storage.list_models()}
+
+
+@router.post("/models")
+async def upload_models(
+    files: list[UploadFile] = File(..., description="模特图片,支持多文件"),
+    name:  Optional[str]    = Form(None),
+    _:     str              = Depends(require_admin),
+):
+    """
+    批量上传模特(人像)图片。每张图片：
+    - 转码为 JPEG(最长边 1024px,比衣服图保留更多细节以利于试穿)
+    - 写入 static/models/
+    - 写入 db.json
+    """
+    if not files:
+        raise HTTPException(status_code=400, detail="请至少上传一张图片")
+
+    allowed = {"image/jpeg", "image/png", "image/webp", "image/jpg"}
+    created = []
+    for f in files:
+        if f.content_type not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=f"{f.filename} 文件类型不支持({f.content_type}),仅支持 jpg/png/webp",
+            )
+
+        raw = await f.read()
+        try:
+            img = Image.open(io.BytesIO(raw)).convert("RGB")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"{f.filename} 不是有效的图片:{e}")
+
+        img.thumbnail((1024, 1024), Image.LANCZOS)
+
+        mid      = storage.gen_model_id()
+        filename = f"{mid}.jpg"
+        out_path = MODELS_DIR / filename
+        img.save(out_path, format="JPEG", quality=90, optimize=True)
+
+        item = storage.add_model(
+            id       = mid,
+            name     = (name or Path(f.filename).stem)[:60],
+            filename = filename,
+            url      = f"/static/models/{filename}",
+        )
+        created.append(item)
+
+    logger.info(f"Uploaded {len(created)} models")
+    return {"code": 0, "data": created}
+
+
+class UpdateModelPayload(BaseModel):
+    name:  Optional[str] = None
+    order: Optional[int] = None
+
+
+@router.patch("/models/{model_id}")
+def update_model_one(model_id: str, payload: UpdateModelPayload, _: str = Depends(require_admin)):
+    item = storage.update_model(
+        model_id,
+        name  = payload.name,
+        order = payload.order,
+    )
+    if not item:
+        raise HTTPException(status_code=404, detail="模特不存在")
+    return {"code": 0, "data": item}
+
+
+@router.put("/models/order")
+def reorder_models_route(payload: ReorderPayload, _: str = Depends(require_admin)):
+    n = storage.reorder_models(payload.ids)
+    return {"code": 0, "msg": f"reordered {n} models"}
+
+
+@router.delete("/models/{model_id}")
+def delete_model_one(model_id: str, _: str = Depends(require_admin)):
+    item = storage.delete_model(model_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="模特不存在")
+    try:
+        (MODELS_DIR / item["filename"]).unlink(missing_ok=True)
     except Exception as e:
         logger.warning(f"Failed to remove file {item['filename']}: {e}")
     return {"code": 0, "data": item}

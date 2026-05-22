@@ -24,7 +24,7 @@
           </div>
           <div>
             <h1 class="text-sm font-display font-semibold text-white leading-none">后台管理</h1>
-            <p class="text-[10px] text-ink-400 mt-0.5">虚拟试衣 · 衣服库管理</p>
+            <p class="text-[10px] text-ink-400 mt-0.5">虚拟试衣 · 资源库管理</p>
           </div>
         </div>
 
@@ -54,42 +54,102 @@
 
     <!-- 主体 -->
     <main class="relative z-10 max-w-7xl mx-auto px-6 py-6">
-      <!-- 统计卡片 -->
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6 animate-fade-up">
-        <div
-          v-for="c in CATEGORIES.filter(x => x.value !== 'all')"
-          :key="c.value"
-          class="rounded-xl border border-ink-700 bg-ink-800/60 backdrop-blur p-3 hover:border-ink-600 transition-colors"
-        >
-          <div class="flex items-center justify-between">
-            <div>
-              <p class="text-[10px] text-ink-400 uppercase tracking-wide">{{ c.label }}</p>
-              <p class="text-xl font-display font-bold text-white mt-1 tabular-nums">{{ countByCat(c.value) }}</p>
+      <!-- Tab 切换 -->
+      <div class="mb-5 animate-fade-up">
+        <div class="inline-flex items-center gap-1 p-1 rounded-xl border border-ink-700 bg-ink-800/60 backdrop-blur">
+          <button
+            @click="activeTab = 'clothes'"
+            class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95"
+            :class="activeTab === 'clothes'
+              ? 'bg-accent text-ink-900 shadow-accent-glow'
+              : 'text-ink-300 hover:text-white hover:bg-ink-700/60'"
+          >
+            <span class="mr-1.5">👕</span>衣服管理
+          </button>
+          <button
+            @click="activeTab = 'models'"
+            class="px-4 py-1.5 rounded-lg text-xs font-medium transition-all active:scale-95"
+            :class="activeTab === 'models'
+              ? 'bg-accent text-ink-900 shadow-accent-glow'
+              : 'text-ink-300 hover:text-white hover:bg-ink-700/60'"
+          >
+            <span class="mr-1.5">🧍</span>模特管理
+          </button>
+        </div>
+      </div>
+
+      <!-- ─── 衣服管理 Tab ────────────────────────────────────── -->
+      <div v-show="activeTab === 'clothes'">
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6 animate-fade-up">
+          <div
+            v-for="c in CATEGORIES.filter(x => x.value !== 'all')"
+            :key="c.value"
+            class="rounded-xl border border-ink-700 bg-ink-800/60 backdrop-blur p-3 hover:border-ink-600 transition-colors"
+          >
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-[10px] text-ink-400 uppercase tracking-wide">{{ c.label }}</p>
+                <p class="text-xl font-display font-bold text-white mt-1 tabular-nums">{{ countByCat(c.value) }}</p>
+              </div>
+              <div class="text-2xl opacity-60">{{ c.icon }}</div>
             </div>
-            <div class="text-2xl opacity-60">{{ c.icon }}</div>
           </div>
         </div>
-      </div>
 
-      <!-- 上传 -->
-      <div class="mb-6 animate-fade-up animate-delay-100">
-        <AdminUploader
-          @uploaded="onUploaded"
-          @error="showToast($event, 'error')"
-        />
-      </div>
-
-      <!-- 列表 -->
-      <div class="animate-fade-up animate-delay-200">
-        <div v-if="loading" class="text-center py-12 text-sm text-ink-400 animate-pulse-soft">
-          加载中…
+        <div class="mb-6 animate-fade-up animate-delay-100">
+          <AdminUploader
+            @uploaded="onClothesUploaded"
+            @error="showToast($event, 'error')"
+          />
         </div>
-        <AdminClothesGrid
-          v-else
-          :items="clothes"
-          @changed="loadClothes"
-          @error="showToast($event, 'error')"
-        />
+
+        <div class="animate-fade-up animate-delay-200">
+          <div v-if="clothesLoading" class="text-center py-12 text-sm text-ink-400 animate-pulse-soft">
+            加载中…
+          </div>
+          <AdminClothesGrid
+            v-else
+            :items="clothes"
+            @changed="loadClothes"
+            @error="showToast($event, 'error')"
+          />
+        </div>
+      </div>
+
+      <!-- ─── 模特管理 Tab ────────────────────────────────────── -->
+      <div v-show="activeTab === 'models'">
+        <!-- 统计卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6 animate-fade-up">
+          <div class="rounded-xl border border-ink-700 bg-ink-800/60 backdrop-blur p-3 hover:border-ink-600 transition-colors">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-[10px] text-ink-400 uppercase tracking-wide">模特总数</p>
+                <p class="text-xl font-display font-bold text-white mt-1 tabular-nums">{{ models.length }}</p>
+              </div>
+              <div class="text-2xl opacity-60">🧍</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-6 animate-fade-up animate-delay-100">
+          <AdminModelUploader
+            @uploaded="onModelsUploaded"
+            @error="showToast($event, 'error')"
+          />
+        </div>
+
+        <div class="animate-fade-up animate-delay-200">
+          <div v-if="modelsLoading" class="text-center py-12 text-sm text-ink-400 animate-pulse-soft">
+            加载中…
+          </div>
+          <AdminModelsGrid
+            v-else
+            :items="models"
+            @changed="loadModels"
+            @error="showToast($event, 'error')"
+          />
+        </div>
       </div>
     </main>
 
@@ -118,25 +178,41 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { adminListClothes, logout } from '../api/admin.js'
+import { adminListClothes, adminListModels, logout } from '../api/admin.js'
 import { CATEGORIES } from '../api/clothes.js'
-import AdminUploader     from '../components/AdminUploader.vue'
-import AdminClothesGrid  from '../components/AdminClothesGrid.vue'
+import AdminUploader       from '../components/AdminUploader.vue'
+import AdminClothesGrid    from '../components/AdminClothesGrid.vue'
+import AdminModelUploader  from '../components/AdminModelUploader.vue'
+import AdminModelsGrid     from '../components/AdminModelsGrid.vue'
 
-const router  = useRouter()
-const clothes = ref([])
-const loading = ref(true)
-const toast   = ref(null)
+const router        = useRouter()
+const activeTab     = ref('clothes')   // 'clothes' | 'models'
+const clothes       = ref([])
+const clothesLoading = ref(true)
+const models        = ref([])
+const modelsLoading = ref(true)
+const toast         = ref(null)
 let toastTimer = null
 
 async function loadClothes() {
-  loading.value = true
+  clothesLoading.value = true
   try {
     clothes.value = await adminListClothes()
   } catch (e) {
-    showToast(e?.response?.data?.detail || '加载失败', 'error')
+    showToast(e?.response?.data?.detail || '加载衣服失败', 'error')
   } finally {
-    loading.value = false
+    clothesLoading.value = false
+  }
+}
+
+async function loadModels() {
+  modelsLoading.value = true
+  try {
+    models.value = await adminListModels()
+  } catch (e) {
+    showToast(e?.response?.data?.detail || '加载模特失败', 'error')
+  } finally {
+    modelsLoading.value = false
   }
 }
 
@@ -144,9 +220,14 @@ function countByCat(value) {
   return clothes.value.filter(x => x.category === value).length
 }
 
-function onUploaded(created) {
+function onClothesUploaded(created) {
   showToast(`成功上传 ${created.length} 件衣服`)
   loadClothes()
+}
+
+function onModelsUploaded(created) {
+  showToast(`成功上传 ${created.length} 位模特`)
+  loadModels()
 }
 
 async function onLogout() {
@@ -160,7 +241,10 @@ function showToast(text, type = 'success') {
   toastTimer = setTimeout(() => { toast.value = null }, 2800)
 }
 
-onMounted(loadClothes)
+onMounted(() => {
+  loadClothes()
+  loadModels()
+})
 </script>
 
 <style scoped>

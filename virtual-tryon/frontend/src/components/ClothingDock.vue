@@ -13,9 +13,9 @@
       <div class="flex items-center gap-2">
         <span class="w-1 h-4 rounded-full bg-accent" />
         <h3 class="text-[13px] font-display font-semibold tracking-wide text-white/90">
-          服装款式精选
+          {{ title }}
         </h3>
-        <span class="text-[11px] text-ink-500">{{ items.length }} 款 · 点击试穿</span>
+        <span class="text-[11px] text-ink-500">{{ items.length }} {{ countSuffix }}</span>
       </div>
 
       <div class="hidden md:flex items-center gap-1.5">
@@ -116,8 +116,10 @@
 import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue'
 
 const props = defineProps({
-  items:      { type: Array,  required: true },
-  modelValue: { type: [String, Number], default: null },
+  items:        { type: Array,  required: true },
+  modelValue:   { type: [String, Number], default: null },
+  title:        { type: String, default: '服装款式精选' },
+  countSuffix:  { type: String, default: '款 · 点击试穿' },
 })
 defineEmits(['update:modelValue'])
 
