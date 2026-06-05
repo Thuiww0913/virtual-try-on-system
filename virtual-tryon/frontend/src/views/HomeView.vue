@@ -33,7 +33,7 @@
       <div class="hidden md:flex items-center gap-2">
         <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-ink-600 bg-ink-800/60 backdrop-blur text-xs text-ink-400">
           <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse-soft" />
-          <span>AI Powered · OOTDiffusion</span>
+          <span>AI Powered</span>
         </div>
         <button
           @click="enterKiosk"

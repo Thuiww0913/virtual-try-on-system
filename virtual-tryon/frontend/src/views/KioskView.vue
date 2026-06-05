@@ -41,7 +41,7 @@
             虚拟试衣
             <span class="text-ink-400 font-normal ml-1 3xl:ml-3 text-base xl:text-lg 3xl:text-3xl">Virtual Try-On</span>
           </h1>
-          <p class="text-xs xl:text-sm 3xl:text-xl text-ink-400 mt-1.5 3xl:mt-3">触控模式 · AI Powered · OOTDiffusion</p>
+          <p class="text-xs xl:text-sm 3xl:text-xl text-ink-400 mt-1.5 3xl:mt-3">触控模式 · AI Powered </p>
         </div>
       </div>
 
